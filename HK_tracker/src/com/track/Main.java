@@ -1,18 +1,14 @@
 package com.track;
 
+/**
+ * 
+ * @author alpa
+ *
+ */
 public class Main {
-
 	public static void main(String[] args) {
-		Tracker tracker = new Tracker();
-		patrol();
-	}
-	
-	public static void patrol() {
-		Turret turret = new Turret();
-		Scanner scanner = new Scanner();
-		while(true) {
-			turret.turn();
-			if (scanner.scan()) {}
-		}
+		// Set the maximum turning radius of the turret to 560
+		Tracker tracker = new Tracker(480);
+		tracker.patrol();
 	}
 }
