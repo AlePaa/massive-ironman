@@ -50,16 +50,16 @@ public class Turret {
 	 * Turn turn the turret right
 	 */
 	public void turnClockwise() {
-		direction = 1;
-		Motor.C.backward();
+		direction = -1;
+		Motor.C.forward();
 	}
 	
 	/**
 	 * Turn the turret left
 	 */
 	public void turnCounterclockwise(){
-		direction = -1;
-		Motor.C.forward();
+		direction = 1;
+		Motor.C.backward();
 	}
 	/**
 	 * Stop rotating.
