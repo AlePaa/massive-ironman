@@ -28,9 +28,64 @@ public class Turret {
 		direction = 1;
 		setRoutineSpeed();
 	}
+
+	/**
+	 * 
+	 * @return false if the turning radius is too large,
+	 * else return true
+	 */
+	public boolean canTurn() {
+		angle = Motor.C.getTachoCount();
+		if (angle >= MAX_ANGLE || angle <= -MAX_ANGLE) {
+			stop();
+			direction *= -1;
+			recover();
+			return false;
+		}
+		return true;
+	}
 	
 	/**
-	 * The standard turret rotation routine, will turn and change direction when necessary
+	 * 
+	 * @return false if there's not enough room for free rotation
+	 */
+	public boolean canRotate() {
+		angle = Motor.C.getTachoCount();
+		if (angle >= MAX_ANGLE - 40 || angle <= -MAX_ANGLE + 40) {
+			stop();
+			direction *= -1;
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Return back into the acceptable turning radius.
+	 */
+	private void recover() {
+		System.out.println("Recovering..");
+		if (angle < MAX_ANGLE * -1) {
+			rotate(-1 * (angle + MAX_ANGLE) + 20);
+		}
+		else if (angle > MAX_ANGLE) {
+			rotate(-1 * (angle - MAX_ANGLE) - 20);
+		}
+		// Do nothing if not outside the permitted radius
+
+		}
+
+	/**
+	 * Rotate the turret.
+	 * 
+	 * @param x The size of the desired turning radius.
+	 */
+	private void rotate(int x) {
+			System.out.println("Rotating..");
+			Motor.C.rotate(x);
+	}
+	
+	/**
+	 * The standard turret rotation routine, will turn and change direction when necessary.
 	 */
 	public void routineTurn() {
 		// Return to routine speed
@@ -41,81 +96,40 @@ public class Turret {
 		}
 	}
 	
-	private void rotate(int x) {
-			System.out.println("Rotating..");
-			Motor.C.rotate(x);
+	/**
+	 * Set the rotation speed as default.
+	 */
+	public void setRoutineSpeed() {
+		Motor.C.setSpeed(80);
 	}
 	
-	/**
-	 * Turn turn the turret right
-	 */
-	public void turnClockwise() {
-		direction = -1;
-		Motor.C.forward();
-	}
-	
-	/**
-	 * Turn the turret left
-	 */
-	public void turnCounterclockwise(){
-		direction = 1;
-		Motor.C.backward();
-	}
-	/**
-	 * Stop rotating.
-	 */
-	public void stop() {
-		Motor.C.stop();
-		recover();
-	}
-
 	/**
 	 * Set the rotation speed for the turret.
 	 */
 	public void setSpeed(int speed) {
 		Motor.C.setSpeed(speed);		
 	}
-	
 	/**
-	 * Set the rotation speed as default.
+	 * Stop rotating.
 	 */
-	public void setRoutineSpeed() {
-		Motor.C.setSpeed(50);
+	public void stop() {
+		Motor.C.stop();
 	}
 	
 	/**
-	 * 
-	 * @return boolean false if the turning radius is too large,
-	 * else return true
+	 * Turn the turret right.
 	 */
-	public boolean canTurn() {
-		angle = Motor.C.getTachoCount();
-		if (angle > MAX_ANGLE || angle < -MAX_ANGLE) {
-			if((angle < -MAX_ANGLE && direction == -1)
-					|| (angle > MAX_ANGLE && direction == 1)) {
-			direction *= -1;
-			}
-			recover();
-			return false;
-		}
-		return true;
+	public void turnClockwise() {
+		direction = 1;
+		Motor.C.forward();
 	}
-	
+
 	/**
-	 * Return from 
+	 * Turn the turret left.
 	 */
-	public void recover() {
-		System.out.println("Recovering..");
-		if (angle < -MAX_ANGLE) {
-			rotate(-(angle + MAX_ANGLE));
-		}
-		else if (angle > MAX_ANGLE) {
-			rotate((angle - MAX_ANGLE) * direction);
-		}
-		// Do nothing
-		else {
-			
-		}
-		}
+	public void turnCounterclockwise(){
+		direction = -1;
+		Motor.C.backward();
+	}
 
 }

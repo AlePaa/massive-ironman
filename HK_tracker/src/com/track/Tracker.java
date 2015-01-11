@@ -9,13 +9,16 @@ package com.track;
  */
 public class Tracker {
 	
+	private String left = "left";
+	private String right = "right";
+	
 	private Scanner scanner;
-	private Turret turret;
 	private int searchDistance;
+	private Turret turret;
 	
 	/**
 	 * 
-	 * @param max maximum turning radius for the turret
+	 * @param max maximum turning radius for the turret.
 	 */
 	public Tracker(int max) {
 		scanner = new Scanner();
@@ -24,106 +27,128 @@ public class Tracker {
 	}
 	
 	/**
-	 * Scans an area slowly.
-	 * If movement is detected, enter tracking mode.
+	 * Instruct the turret to turn left or right,
+	 * then call the main chase.
+	 * 
+	 * @param direction String value depicting the direction to which to turn.
 	 */
-	public void patrol() {
-		while(true) {
-			turret.routineTurn();
-			// If movement is detected, enter the tracking mode
-			if (scanner.scan()) {
-				track();
+	private void chase(String direction) {
+		if (direction.equals(left)) {
+			turret.turnClockwise();
+		}
+		else { 
+			turret.turnCounterclockwise();
+		}
+		chaseMain();
+	}
+	
+	/**
+	 * Attempts to follow the previously seen moving object
+	 * by turning left or right depending on which sensor saw it last.
+	 */
+	private void chaseMain() {
+		
+		while(turret.canTurn()) {
+			boolean seenByLeft = isInSights(left);
+			boolean seenByRight = isInSights(right);
+			if (seenByLeft && seenByRight) {
+				turret.stop();
+				break;
+				}
+			else if (seenByLeft) {
+				turret.turnCounterclockwise();
+			}
+			else if (seenByRight) {
+				turret.turnClockwise();
 			}
 		}
 	}
 	
 	/**
+	 * See if the target can be seen by a sensor.
+	 * 
+	 * @param usedSensor String value representing a specific sensor
+	 * 
+	 * @return boolean true if object detected near the distance of search.
+	 */
+	private boolean isInSights(String usedSensor) {
+		int distance = 0;
+			distance = scanner.getDistance(usedSensor);
+		if (distance > 0 && distance != 255 &&
+				distance < searchDistance+30 && distance > searchDistance-30) {
+			searchDistance = distance;
+			System.out.println("Target sighted at: " + distance);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Scans an area slowly.
+	 * If movement is detected, enter tracking mode.
+	 */
+	public void patrol() {
+		while(true) {
+			System.out.println("Scanning..");
+			turret.routineTurn();
+			// If movement is detected, enter the tracking mode
+			if (scanner.scan(left)) {
+				track(left);
+			}
+			else if(scanner.scan(right)) {
+				track(right);
+			}
+		}
+	}
+
+	/**
 	 * Attempts to lock on to the target.
 	 */
-	private void track() {
-		System.out.println("Movement at: " + scanner.getS1Distance());
+	private void track(String detectedSensor) {
 		// Use count to automatically drop the lock if the target
 		// stays immobile for too long
 		int count = 0;
 		// 
-		turret.setSpeed(180);
-		searchDistance = scanner.getS1Distance();
-		while(count < 50 && turret.canTurn()){
+		turret.setSpeed(200);
+
+		while(count < 20 && turret.canTurn() && turret.canRotate()){
+
 		// Set the initial distance from which the target is sought
+		searchDistance = scanner.getDistance(detectedSensor);
 		// If the target hasn't moved, wait for movement
-		if(isInSights()){	
-			searchDistance = scanner.getS1Distance();
-			try {
-				Thread.sleep(5);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				}
+		if(isInSights(left) && isInSights(right)){	
+			searchDistance = scanner.getDistance(left);
+			wait(10);
 			count++;
-		}
+		} 
+		
 		else {
 		// Target lost, reset the count
 			count = 0;
 		// Figure out which way it went,
 		// then head into that direction until the target is found or
 		// turning is not allowed
-			if (isSeenByS2() && !isInSights()) {
-				chaseR();
+			if (isInSights(right) && !isInSights(left)) {
+				chase(right);
 			}
-			else { 
-				chaseL();
+			else if (isInSights(left) && !isInSights(right)) { 
+				chase(left);
 			}
 		}
 		}
 	}
 	
 	/**
-	 * Instruct the turret to turn right,
-	 * then call the main chase.
-	 */
-	private void chaseR() {
-		turret.turnClockwise();
-		chaseMain();
-	}
-	
-	/**
-	 * Instruct the turret to turn left,
-	 * then call the main chase.
-	 */
-	private void chaseL() {
-		turret.turnCounterclockwise();
-		chaseMain();
-	}
-	
-	private void chaseMain() {
-		while(turret.canTurn()) {
-			if (isInSights()) {
-				break;
-			} else if (isSeenByS2()) {
-				turret.stop();
-				chaseR();
-			}
-		}
-		turret.stop();
-	}
-	/**
+	 * Wait for the specified time.
 	 * 
-	 * @param search The current approximation of the moving object's
-	 * location.
-	 * @return boolean true if object detected near the distance of search.
+	 * @param x The rest time in milliseconds
 	 */
-	private boolean isInSights() {
-		int distance = scanner.getS1Distance();
-		if (distance < searchDistance+40 && distance > searchDistance-40) {
-			return true;
+	private void wait(int x) {
+		try {
+			Thread.sleep(x);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
-		return false;
 	}
-	
-	private boolean isSeenByS2() {
-		int distance = scanner.getS2Distance();
-		if (distance < searchDistance+40 && distance > searchDistance-40) {
-			return true;
-		}
-		return false;
-	}
+
 }
